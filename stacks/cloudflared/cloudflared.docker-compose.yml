@@ -1,0 +1,31 @@
+services: 
+  # Cloudflare Tunnel
+  cloudflared: 
+    command: tunnel --no-autoupdate run
+    container_name: ${APP_CLOUDFLARED_NAME}
+    environment:
+      TUNNEL_TOKEN: ${APP_CLOUDFLARED_TUNNEL_TOKEN}
+      TUNNEL_METRICS: 0.0.0.0:60123
+    healthcheck:
+      interval: 1s
+      retries: 60
+      test: ['CMD', 'cloudflared', 'tunnel', 'ready']
+      timeout: 2s
+    image: cloudflare/cloudflared:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_CLOUDFLARED_NAME}
+      homepage.name: ${APP_CLOUDFLARED_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_CLOUDFLARED_LABEL_HOMEPAGE_ICON}
+      homepage.href: ${APP_CLOUDFLARED_LABEL_HOMEPAGE_HREF}
+      homepage.widget.type: cloudflared
+      homepage.widget.accountid: ${APP_CLOUDFLARED_ACCOUNT_ID}
+      homepage.widget.tunnelid: ${APP_CLOUDFLARED_TUNNEL_ID}
+      homepage.widget.key: ${APP_CLOUDFLARED_API}
+    networks: 
+      - proxy-net
+    restart: unless-stopped
+
+networks: 
+  proxy-net: 
+    external: true

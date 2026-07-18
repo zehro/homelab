@@ -1,0 +1,146 @@
+services:
+  # Media App
+  plex:
+    container_name: ${APP_PLEX_NAME}
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      VERSION: docker
+      # Find at plex.tv/claim
+      PLEX_CLAIM: ${APP_PLEX_CLAIM}
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 15s
+      test: ["CMD", "curl", "-f", "http://localhost:32400/identity"]
+      timeout: 10s
+    image: lscr.io/linuxserver/plex:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_PLEX_NAME}
+      homepage.name: ${APP_PLEX_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_PLEX_LABEL_HOMEPAGE_ICON}
+      homepage.description: ${APP_PLEX_LABEL_HOMEPAGE_DESC}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
+      homepage.widgets[0].type: plex
+      homepage.widgets[0].url: http://${APP_PLEX_NAME}:32400
+      homepage.widgets[0].key: ${APP_PLEX_TOKEN}
+      homepage.widgets[1].type: tautulli
+      homepage.widgets[1].url: http://${APP_TAUTULLI_NAME}:8181/${APP_TAUTULLI_NAME}
+      homepage.widgets[1].key: ${APP_TAUTULLI_API}
+      homepage.widgets[1].enableUser: true
+      homepage.widgets[1].showEpisodeNumber: true
+      homepage.showStats: true
+    networks:
+      - proxy-net
+    ports:
+      - ${APP_PLEX_PORT:-32400}:32400
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/plex/config:/config
+      - ${APP_PATH_DATA}/plex/transcode:/transcode
+      - ${APP_PATH_LIBRARY}:/data
+
+  plex-auto-languages:
+    container_name: ${APP_PAL_NAME}
+    depends_on:
+      plex:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ}
+      PLEX_URL: http://${APP_PLEX_NAME}:32400
+      PLEX_TOKEN: ${APP_PLEX_TOKEN}
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 20s
+      test: ["CMD", "curl", "-f", "http://localhost:9880/health"]
+      timeout: 5s
+    image: ghcr.io/journeydocker/plex-auto-languages:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_PAL_NAME}
+      homepage.name: ${APP_PAL_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_PAL_LABEL_HOMEPAGE_ICON}
+      homepage.href: ${APP_PAL_LABEL_HOMEPAGE_HREF}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/plex/config:/config
+
+  # kometa:
+  #   container_name: ${APP_KOMETA_NAME}
+  #   depends_on:
+  #     plex:
+  #       condition: service_healthy
+  #   environment:
+  #     TZ: ${TZ}
+  #     KOMETA_CONFIG: /config/config.yml
+  #   image: kometateam/kometa:latest
+  #   networks:
+  #     - proxy-net
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ${APP_PATH_DATA}/plex/kometa:/config:rw
+
+  tautulli:
+    container_name: ${APP_TAUTULLI_NAME}
+    depends_on:
+      plex:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 30s
+      test: ["CMD", "curl", "-f", "http://localhost:8181/status"]
+      timeout: 5s
+    image: lscr.io/linuxserver/tautulli:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_TAUTULLI_NAME}
+      homepage.name: ${APP_TAUTULLI_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_TAUTULLI_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}/${APP_TAUTULLI_NAME}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/plex/tautulli:/config
+
+  maintainerr:
+    container_name: ${APP_MAINTAINERR_NAME}
+    depends_on:
+      plex:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ}
+      BASE_PATH: /${APP_MAINTAINERR_NAME}
+      NODE_TLS_REJECT_UNAUTHORIZED: 0
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 30s
+      test: ["CMD", "curl", "-f", "http://localhost:6246/${APP_MAINTAINERR_NAME}/api/app/status"]
+      timeout: 10s
+    image: ghcr.io/maintainerr/maintainerr:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_MAINTAINERR_NAME}
+      homepage.name: ${APP_MAINTAINERR_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_MAINTAINERR_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}/${APP_MAINTAINERR_NAME}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/plex/maintainerr:/opt/data
+
+networks:
+  proxy-net:
+    external: true

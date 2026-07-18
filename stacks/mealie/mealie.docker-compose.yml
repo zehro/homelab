@@ -1,0 +1,80 @@
+services:
+  mealie-db:
+    container_name: ${APP_MEALIE_NAME}_db
+    environment:
+      POSTGRES_DB: ${APP_MEALIE_DB_DATABASE}
+      POSTGRES_USER: ${APP_MEALIE_DB_USERNAME}
+      POSTGRES_PASSWORD: ${APP_MEALIE_DB_PASSWORD}
+      PGUSER: ${APP_MEALIE_DB_USERNAME}
+    healthcheck:
+      interval: 30s
+      retries: 3
+      test: ["CMD", "pg_isready", "-U", "${APP_MEALIE_DB_USERNAME}", "-d", "${APP_MEALIE_DB_DATABASE}"]
+      timeout: 20s
+    image: postgres:18
+    networks:
+      - default
+    restart: unless-stopped
+    user: 999:999
+    volumes:
+      - ${APP_PATH_DATA}/mealie/postgres:/var/lib/postgresql
+
+  mealie-server:
+    container_name: ${APP_MEALIE_NAME}
+    depends_on:
+      mealie-db:
+        condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 1000M
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      BASE_URL: ${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
+      ALLOW_SIGNUP: false
+      MAX_WORKERS: 1
+      WEB_CONCURRENCY: 1
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_AUTH_STRATEGY: TLS
+      SMTP_USER: ${APP_MEALIE_SMTP_USERNAME}
+      SMTP_PASSWORD: ${APP_MEALIE_SMTP_PASSWORD}
+      SMTP_FROM_NAME: Mealie Server
+      SMTP_FROM_EMAIL: ${APP_MEALIE_SMTP_USERNAME}
+      DB_ENGINE: postgres
+      POSTGRES_SERVER: mealie-db
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: ${APP_MEALIE_DB_DATABASE}
+      POSTGRES_USER: ${APP_MEALIE_DB_USERNAME}
+      POSTGRES_PASSWORD: ${APP_MEALIE_DB_PASSWORD}
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 30s
+      test: ["CMD", "curl", "-f", "http://localhost:9000/api/app/about"]
+      timeout: 5s
+    image: ghcr.io/mealie-recipes/mealie:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_MEALIE_NAME}
+      homepage.name: ${APP_MEALIE_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_MEALIE_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
+      homepage.widget.type: mealie
+      homepage.widget.version: 2
+      homepage.widget.url: http://${APP_MEALIE_NAME}:9000
+      homepage.widget.key: ${APP_MEALIE_API}
+    networks:
+      - default
+      - proxy-net
+    ports:
+      - ${APP_MEALIE_PORT}:9000
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/mealie/data:/app/data
+
+networks:
+  proxy-net:
+    external: true

@@ -1,0 +1,365 @@
+services:
+  # Requester
+  seerr:
+    container_name: ${APP_SEERR_NAME}
+    environment:
+      TZ: ${TZ}
+    healthcheck:
+      interval: 15s
+      retries: 3
+      start_period: 20s
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:5055/api/v1/status"]
+      timeout: 3s
+    image: ghcr.io/seerr-team/seerr:latest
+    init: true
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_SEERR_NAME}
+      homepage.name: ${APP_SEERR_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_SEERR_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
+      homepage.widget.type: seerr
+      homepage.widget.url: http://${APP_SEERR_NAME}:5055
+      homepage.widget.key: ${APP_SEERR_API}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    user: ${PUID}:${PGID}
+    volumes:
+      - ${APP_PATH_DATA}/servarr/seerr:/app/config
+
+  # DDoS Bypass
+  flaresolverr:
+    container_name: ${APP_FLARESOLVERR_NAME}
+    environment:
+      TZ: ${TZ}
+    healthcheck:
+      interval: 15s
+      retries: 3
+      start_period: 5s
+      test: ["CMD", "curl", "-f", "http://localhost:8191/health"]
+      timeout: 3s
+    image: ghcr.io/flaresolverr/flaresolverr:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_FLARESOLVERR_NAME}
+      homepage.name: ${APP_FLARESOLVERR_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_FLARESOLVERR_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}${APP_FLARESOLVERR_PREFIX}
+      homepage.widget.type: customapi
+      homepage.widget.url: http://${APP_FLARESOLVERR_NAME}:8191
+      homepage.widget.refreshInterval: 60000
+      homepage.widget.display: block
+      homepage.widget.method: GET
+      homepage.widget.mappings[0].field: version
+      homepage.widget.mappings[0].label: Version
+      homepage.widget.mappings[1].field: userAgent
+      homepage.widget.mappings[1].label: Browser User-Agent
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/servarr/flaresolverr:/config
+
+  # Indexer
+  prowlarr:
+    container_name: ${APP_PROWLARR_NAME}
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      PROWLARR__SERVER__PORT: ${APP_PROWLARR_PORT}
+      PROWLARR__SERVER__URLBASE: ${APP_PROWLARR_PREFIX}
+    healthcheck:
+      interval: 15s
+      retries: 3
+      start_period: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_PROWLARR_PORT}${APP_PROWLARR_PREFIX}/ping"]
+      timeout: 3s
+    image: lscr.io/linuxserver/prowlarr:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_PROWLARR_NAME}
+      homepage.name: ${APP_PROWLARR_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_PROWLARR_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}${APP_PROWLARR_PREFIX}
+      homepage.widget.type: prowlarr
+      homepage.widget.url: http://${APP_PROWLARR_NAME}:${APP_PROWLARR_PORT}
+      homepage.widget.key: ${APP_PROWLARR_API}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/servarr/prowlarr:/config
+
+  # Movies
+  radarr:
+    container_name: ${APP_RADARR_NAME}
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      RADARR__SERVER__PORT: ${APP_RADARR_PORT}
+      RADARR__SERVER__URLBASE: ${APP_RADARR_PREFIX}
+    healthcheck:
+      interval: 15s
+      retries: 3
+      start_period: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_RADARR_PORT}${APP_RADARR_PREFIX}/ping"]
+      timeout: 3s
+    image: lscr.io/linuxserver/radarr:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_RADARR_NAME}
+      homepage.name: ${APP_RADARR_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_RADARR_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}${APP_RADARR_PREFIX}
+      homepage.widget.type: radarr
+      homepage.widget.url: http://${APP_RADARR_NAME}:${APP_RADARR_PORT}
+      homepage.widget.key: ${APP_RADARR_API}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/servarr/radarr:/config
+      - ${APP_PATH_LIBRARY}:/data
+      - ${APP_PATH_LIBRARY}/downloads:/downloads
+
+  # TV Shows
+  sonarr:
+    container_name: ${APP_SONARR_NAME}
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      SONARR__SERVER__PORT: ${APP_SONARR_PORT}
+      SONARR__SERVER__URLBASE: ${APP_SONARR_PREFIX}
+    healthcheck:
+      interval: 15s
+      retries: 3
+      start_period: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_SONARR_PORT}${APP_SONARR_PREFIX}/ping"]
+      timeout: 3s
+    image: lscr.io/linuxserver/sonarr:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_SONARR_NAME}
+      homepage.name: ${APP_SONARR_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_SONARR_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}${APP_SONARR_PREFIX}
+      homepage.widget.type: sonarr
+      homepage.widget.url: http://${APP_SONARR_NAME}:${APP_SONARR_PORT}
+      homepage.widget.key: ${APP_SONARR_API}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/servarr/sonarr:/config
+      - ${APP_PATH_LIBRARY}:/data
+      - ${APP_PATH_LIBRARY}/downloads:/downloads
+
+  # Anime
+  sonarr2D:
+    container_name: ${APP_SONARR2_NAME}
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      SONARR__SERVER__PORT: ${APP_SONARR2_PORT}
+      SONARR__SERVER__URLBASE: ${APP_SONARR2_PREFIX}
+    healthcheck:
+      interval: 15s
+      retries: 3
+      start_period: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_SONARR2_PORT}${APP_SONARR2_PREFIX}/ping"]
+      timeout: 3s
+    image: lscr.io/linuxserver/sonarr:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_SONARR_NAME}
+      homepage.name: ${APP_SONARR2_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_SONARR2_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}${APP_SONARR2_PREFIX}
+      homepage.widget.type: sonarr
+      homepage.widget.url: http://${APP_SONARR2_NAME}:${APP_SONARR2_PORT}
+      homepage.widget.key: ${APP_SONARR2_API}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/servarr/sonarr2D:/config
+      - ${APP_PATH_LIBRARY}:/data
+      - ${APP_PATH_LIBRARY}/downloads:/downloads
+
+  # Quality Profiles (Radarr, Sonarr)
+  clonarr:
+    container_name: ${APP_CLONARR_NAME}
+    depends_on:
+      radarr:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      URL_BASE: ${APP_CLONARR_PREFIX}
+    healthcheck:
+      interval: 15s
+      retries: 3
+      start_period: 10s
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:${APP_CLONARR_PORT}${APP_CLONARR_PREFIX}/api/health"]
+      timeout: 3s
+    image: ghcr.io/prophetse7en/clonarr:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_CLONARR_NAME}
+      homepage.name: ${APP_CLONARR_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_CLONARR_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}${APP_CLONARR_PREFIX}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/servarr/clonarr:/config
+
+  # Subtitles
+  bazarr:
+    container_name: ${APP_BAZARR_NAME}
+    depends_on:
+      radarr:
+        condition: service_healthy
+      sonarr:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+    healthcheck:
+      interval: 15s
+      retries: 3
+      start_period: 30s
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_BAZARR_PORT}${APP_BAZARR_PREFIX}/api/system/ping"]
+      timeout: 3s
+    image: lscr.io/linuxserver/bazarr:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_BAZARR_NAME}
+      homepage.name: ${APP_BAZARR_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_BAZARR_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}${APP_BAZARR_PREFIX}
+      homepage.widget.type: bazarr
+      homepage.widget.url: http://${APP_BAZARR_NAME}:${APP_BAZARR_PORT}${APP_BAZARR_PREFIX}
+      homepage.widget.key: ${APP_BAZARR_API}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/servarr/bazarr:/config
+      - ${APP_PATH_LIBRARY}:/data
+
+  # Music
+  lidarr:
+    container_name: ${APP_LIDARR_NAME}
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      LIDARR__SERVER__PORT: ${APP_LIDARR_PORT}
+      LIDARR__SERVER__URLBASE: ${APP_LIDARR_PREFIX}
+    healthcheck:
+      interval: 15s
+      retries: 3
+      start_period: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_LIDARR_PORT}${APP_LIDARR_PREFIX}/ping"]
+      timeout: 3s
+    image: lscr.io/linuxserver/lidarr:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_LIDARR_NAME}
+      homepage.name: ${APP_LIDARR_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_LIDARR_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}${APP_LIDARR_PREFIX}
+      homepage.widget.type: lidarr
+      homepage.widget.url: http://${APP_LIDARR_NAME}:${APP_LIDARR_PORT}
+      homepage.widget.key: ${APP_LIDARR_API}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/servarr/lidarr:/config
+      - ${APP_PATH_LIBRARY}:/data
+      - ${APP_PATH_LIBRARY}/downloads:/downloads
+
+  # Books
+  readarr:
+    container_name: ${APP_READARR_NAME}
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      READARR__SERVER__PORT: ${APP_READARR_PORT}
+      READARR__SERVER__URLBASE: ${APP_READARR_PREFIX}
+    healthcheck:
+      interval: 15s
+      retries: 3
+      start_period: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_READARR_PORT}${APP_READARR_PREFIX}/ping"]
+      timeout: 3s
+    image: ghcr.io/pennydreadful/bookshelf:hardcover
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_READARR_NAME}
+      homepage.name: ${APP_READARR_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_READARR_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}${APP_READARR_PREFIX}
+      homepage.widget.type: readarr
+      homepage.widget.url: http://${APP_READARR_NAME}:${APP_READARR_PORT}
+      homepage.widget.key: ${APP_READARR_API}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/servarr/readarr:/config
+      - ${APP_PATH_LIBRARY}:/data
+      - ${APP_PATH_LIBRARY}/downloads:/downloads
+
+  # Comics
+  kapowarr:
+    container_name: ${APP_KAPOWARR_NAME}
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      BASE_URL_PREFIX: ${APP_KAPOWARR_PREFIX}
+    healthcheck:
+      interval: 15s
+      retries: 3
+      start_period: 20s
+      test: ["CMD-SHELL", "python3 -c \"import urllib.request; urllib.request.urlopen('http://localhost:${APP_KAPOWARR_PORT}${APP_KAPOWARR_PREFIX}'); exit(0)\""]
+      timeout: 10s
+    image: mrcas/kapowarr:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_KAPOWARR_NAME}
+      homepage.name: ${APP_KAPOWARR_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_KAPOWARR_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}${APP_KAPOWARR_PREFIX}
+      homepage.widget.type: customapi
+      homepage.widget.url: http://${APP_KAPOWARR_NAME}:${APP_KAPOWARR_PORT}${APP_KAPOWARR_PREFIX}/api
+      homepage.widget.refreshInterval: 60000
+      homepage.widget.display: block
+      homepage.widget.method: GET
+      homepage.widget.mappings[0].field: version
+      homepage.widget.mappings[0].label: Version
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/servarr/kapowarr:/app/db
+      - ${APP_PATH_LIBRARY}:/data
+      - ${APP_PATH_LIBRARY}/downloads:/app/temp_downloads
+
+networks:
+  proxy-net:
+    external: true

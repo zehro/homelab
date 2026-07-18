@@ -1,0 +1,98 @@
+services:
+  immich-db:
+    container_name: ${APP_IMMICH_NAME}_db
+    environment:
+      POSTGRES_DB: ${APP_IMMICH_DB_DATABASE}
+      POSTGRES_USER: ${APP_IMMICH_DB_USERNAME}
+      POSTGRES_PASSWORD: ${APP_IMMICH_DB_PASSWORD}
+      DB_STORAGE_TYPE: HDD
+    healthcheck:
+      interval: 10s
+      retries: 5
+      start_period: 20s
+      test: ["CMD", "pg_isready", "-U", "${APP_IMMICH_DB_USERNAME}", "-d", "${APP_IMMICH_DB_DATABASE}"]
+      timeout: 5s
+    image: ghcr.io/immich-app/postgres:18-vectorchord0.5.3
+    networks:
+      - default
+    restart: unless-stopped
+    shm_size: 256mb
+    user: 999:999
+    volumes:
+      - ${APP_PATH_DATA}/immich/postgres:/var/lib/postgresql
+
+  immich-cache:
+    container_name: ${APP_IMMICH_NAME}_cache
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping || exit 1;"]
+    image: docker.io/valkey/valkey:9.0.3
+    networks:
+      - default
+    restart: unless-stopped
+
+  immich-server:
+    container_name: ${APP_IMMICH_NAME}
+    depends_on:
+      immich-db:
+        condition: service_healthy
+      immich-cache:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ}
+      IMMICH_CONFIG_FILE: /config/immich.json
+      REDIS_HOSTNAME: immich-cache
+      DB_HOSTNAME: immich-db
+      DB_DATABASE_NAME: ${APP_IMMICH_DB_DATABASE}
+      DB_USERNAME: ${APP_IMMICH_DB_USERNAME}
+      DB_PASSWORD: ${APP_IMMICH_DB_PASSWORD}
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 90s
+      test: ["CMD", "curl", "-f", "http://localhost:2283/api/server/ping"]
+      timeout: 10s
+    image: ghcr.io/immich-app/immich-server:${APP_IMMICH_VERSION}
+    # extends:
+    #   file: hwaccel.transcoding.yml
+    #   service: cpu # set to one of [nvenc, quicksync, rkmpp, vaapi, vaapi-wsl] for accelerated transcoding
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_IMMICH_NAME}
+      homepage.name: ${APP_IMMICH_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_IMMICH_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
+      homepage.widget.type: immich
+      homepage.widget.version: 2
+      homepage.widget.url: http://${APP_IMMICH_NAME}:2283
+      homepage.widget.key: ${APP_IMMICH_API}
+    networks:
+      - default
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/immich/config/immich.json:/config/immich.json
+      - ${APP_PATH_DATA}/immich/data:/data
+
+  # immich-machine-learning:
+  #   container_name: immich_machine_learning
+  #   healthcheck:
+  #     interval: 30s
+  #     retries: 3
+  #     start_period: 60s
+  #     test: ["CMD", "curl", "-f", "http://localhost:3003/ping"]
+  #     timeout: 10s
+  #   # For hardware acceleration, add one of -[armnn, cuda, rocm, openvino, rknn] to the image tag.
+  #   # Example tag: ${APP_IMMICH_VERSION:-release}-cuda
+  #   image: ghcr.io/immich-app/immich-machine-learning:${APP_IMMICH_VERSION:-release}
+  #   # extends: # uncomment this section for hardware acceleration - see https://docs.immich.app/features/ml-hardware-acceleration
+  #   #   file: hwaccel.ml.yml
+  #   #   service: cpu # set to one of [armnn, cuda, rocm, openvino, openvino-wsl, rknn] for accelerated inference - use the `-wsl` version for WSL2 where applicable
+  #   networks:
+  #     - default
+  #   restart: unless-stopped
+  #   volumes:
+  #     - ${APP_PATH_DATA}/immich/ml-cache:/cache
+
+networks:
+  proxy-net:
+    external: true

@@ -1,0 +1,47 @@
+services:
+  wizarr:
+    container_name: ${APP_WIZARR_NAME}
+    environment:
+      TZ: ${TZ}
+      APP_URL: ${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
+      DISABLE_BUILTIN_AUTH: false
+    healthcheck:
+      interval: 15s
+      retries: 3
+      start_period: 5s
+      test: ["CMD", "curl", "-f", "http://localhost:5690/health"]
+      timeout: 3s
+    image: ghcr.io/wizarrrr/wizarr:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_WIZARR_NAME}
+      homepage.name: ${APP_WIZARR_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_WIZARR_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
+      homepage.widget.type: customapi
+      homepage.widget.url: http://${APP_WIZARR_NAME}:5690/api/status
+      homepage.widget.display: block
+      homepage.widget.method: GET
+      homepage.widget.refreshInterval: 60000
+      homepage.widget.headers.X-API-Key: ${APP_WIZARR_API}
+      homepage.widget.mappings[0].field: users
+      homepage.widget.mappings[0].label: Users
+      homepage.widget.mappings[0].format: number
+      homepage.widget.mappings[1].field: invites
+      homepage.widget.mappings[1].label: Invites
+      homepage.widget.mappings[1].format: number
+      homepage.widget.mappings[2].field: pending
+      homepage.widget.mappings[2].label: Pending
+      homepage.widget.mappings[2].format: number
+      homepage.widget.mappings[3].field: expired
+      homepage.widget.mappings[3].label: Expired
+      homepage.widget.mappings[3].format: number
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/wizarr/database:/data/database
+
+networks:
+  proxy-net:
+    external: true

@@ -1,0 +1,32 @@
+services:
+  npm:
+    container_name: ${APP_NPM_NAME}
+    healthcheck:
+      interval: 10s
+      test: ["CMD", "/usr/bin/check-health"]
+      timeout: 3s
+    image: jc21/nginx-proxy-manager:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_NPM_NAME}
+      homepage.name: ${APP_NPM_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_NPM_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
+      homepage.widget.type: npm
+      homepage.widget.url: http://${APP_NPM_NAME}:81
+      homepage.widget.username: ${APP_NPM_USERNAME}
+      homepage.widget.password: ${APP_NPM_PASSWORD}
+    networks:
+      - proxy-net
+    ports:
+      - ${APP_NPM_PORT_HTTP}:80
+      - ${APP_NPM_PORT_HTTPS}:443
+      - ${APP_NPM_PORT}:81
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/npm/data:/data
+      - ${APP_PATH_DATA}/npm/certs:/etc/letsencrypt
+
+networks:
+  proxy-net:
+    external: true

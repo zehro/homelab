@@ -1,0 +1,167 @@
+services:
+  gluetun:
+    cap_add:
+      - NET_ADMIN
+    container_name: ${APP_GLUETUN_NAME}
+    devices:
+      - /dev/net/tun:/dev/net/tun
+    # Read more about environment variables at:
+    # https://deepwiki.com/qdm12/gluetun/2.2-environment-variables-reference
+    # https://github.com/qdm12/gluetun-wiki/blob/main/setup/providers/protonvpn.md
+    environment:
+      TZ: ${TZ}
+      VPN_TYPE: openvpn
+      OPENVPN_USER: ${APP_GLUETUN_OPENVPN_USERNAME}
+      OPENVPN_PASSWORD: ${APP_GLUETUN_OPENVPN_PASSWORD}
+      OPENVPN_ENDPOINT_PORT: 443
+      VPN_SERVICE_PROVIDER: protonvpn
+      SERVER_COUNTRIES: United States
+      SERVER_CITIES: Atlanta
+      PORT_FORWARD_ONLY: on
+      VPN_PORT_FORWARDING: on
+      VPN_PORT_FORWARDING_STATUS_FILE: /tmp/gluetun/forwarded_port
+      GLUETUN_CONTROL_SERVER_PORT: ${APP_GLUETUN_PORT}
+      HTTP_CONTROL_SERVER_LOG: on
+      HTTP_CONTROL_SERVER_AUTH_CONFIG_FILEPATH: /gluetun/auth/config.toml
+      HTTP_CONTROL_SERVER_ADDRESS: :${APP_GLUETUN_PORT}
+      UPDATER_PERIOD: 24h
+      UPDATER_PROTONVPN_EMAIL: ${APP_GLUETUN_PROTONVPN_USERNAME}
+      UPDATER_PROTONVPN_PASSWORD: ${APP_GLUETUN_PROTONVPN_PASSWORD}
+    healthcheck:
+      interval: 15s
+      retries: 3
+      start_period: 15s
+      test: ["CMD", "/gluetun-entrypoint", "healthcheck"]
+      timeout: 10s
+    image: qmcgaw/gluetun:latest
+    networks:
+      - proxy-net
+    ports:
+      - ${APP_GLUETUN_PORT}:${APP_GLUETUN_PORT}
+      - ${APP_QBT_PORT}:${APP_QBT_PORT}
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/servarr/gluetun:/gluetun
+
+  qbittorrent:
+    container_name: ${APP_QBT_NAME}
+    depends_on:
+      gluetun:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      WEBUI_PORT: ${APP_QBT_PORT}
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 30s
+      test: ["CMD", "curl", "-f", "http://localhost:${APP_QBT_PORT}"]
+      timeout: 3s
+    image: lscr.io/linuxserver/qbittorrent:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_QBT_NAME}
+      homepage.name: ${APP_QBT_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_QBT_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}${APP_PREFIX_QBT}
+      homepage.widgets[0].type: gluetun
+      homepage.widgets[0].version: 2
+      homepage.widgets[0].url: http://${APP_GLUETUN_NAME}:${APP_GLUETUN_PORT}
+      homepage.widgets[0].key: ${APP_GLUETUN_API}
+      homepage.widgets[1].type: qbittorrent
+      homepage.widgets[1].url: http://${APP_GLUETUN_NAME}:${APP_QBT_PORT}
+      homepage.widgets[1].username: ${APP_QBT_USERNAME}
+      homepage.widgets[1].password: ${APP_QBT_PASSWORD}
+    network_mode: service:gluetun
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/servarr/qbittorrent:/config
+      - ${APP_PATH_LIBRARY}/downloads:/downloads
+
+  qbittorrent-port-sync:
+    container_name: ${APP_QBT_SYNC}
+    depends_on:
+      gluetun:
+        condition: service_healthy
+      qbittorrent:
+        condition: service_healthy
+    environment:
+      GTN_ADDR: http://localhost:${APP_GLUETUN_PORT}
+      GTN_APIKEY: ${APP_GLUETUN_API}
+      QBT_ADDR: http://localhost:${APP_QBT_PORT}
+      QBT_USERNAME: ${APP_QBT_USERNAME}
+      QBT_PASSWORD: ${APP_QBT_PASSWORD}
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 30s
+      test: ["CMD-SHELL", "pgrep -f port-forward || exit 1;"]
+      timeout: 5s
+    image: mjmeli/qbittorrent-port-forward-gluetun-server
+    network_mode: service:gluetun
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/servarr/qbittorrent/qbt-port-sync:/config
+
+  cleanuparr:
+    container_name: ${APP_CLEANUPARR_NAME}
+    depends_on:
+      qbittorrent:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ}
+      PORT: ${APP_CLEANUPARR_PORT}
+      BASE_PATH: ${APP_CLEANUPARR_PREFIX}
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 60s
+      test: ["CMD-SHELL", "curl -f http://localhost:${APP_CLEANUPARR_PORT}${APP_CLEANUPARR_PREFIX}/health"]
+      timeout: 10s
+    image: ghcr.io/cleanuparr/cleanuparr:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_CLEANUPARR_NAME}
+      homepage.name: ${APP_CLEANUPARR_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_CLEANUPARR_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}${APP_CLEANUPARR_PREFIX}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/servarr/cleanuparr:/config
+      - ${APP_PATH_LIBRARY}/downloads:/downloads
+
+  unpackerr:
+    container_name: ${APP_UNPACKERR_NAME}
+    depends_on:
+      qbittorrent:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ}
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 60s
+      test: ["CMD-SHELL", "test -f /proc/1/status"]
+      timeout: 10s
+    image: golift/unpackerr
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_UNPACKERR_NAME}
+      homepage.name: ${APP_UNPACKERR_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_UNPACKERR_LABEL_HOMEPAGE_ICON}
+      homepage.href: ${APP_UNPACKERR_LABEL_HOMEPAGE_HREF}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    user: ${PUID}:100
+    volumes:
+      - ${APP_PATH_DATA}/servarr/unpackerr:/config
+      - ${APP_PATH_LIBRARY}/downloads:/downloads
+
+networks:
+  proxy-net:
+    external: true

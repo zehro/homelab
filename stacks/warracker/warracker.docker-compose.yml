@@ -1,0 +1,71 @@
+services:
+  warracker-db:
+    container_name: ${APP_WARRACKER_NAME}_db
+    environment:
+      POSTGRES_DB: ${APP_WARRACKER_DB_DATABASE}
+      POSTGRES_USER: ${APP_WARRACKER_DB_USERNAME}
+      POSTGRES_PASSWORD: ${APP_WARRACKER_DB_PASSWORD}
+    healthcheck:
+      interval: 5s
+      retries: 5
+      start_period: 15s
+      test: ["CMD", "pg_isready", "-U", "${APP_WARRACKER_DB_USERNAME}", "-d", "${APP_WARRACKER_DB_DATABASE}"]
+      timeout: 5s
+    image: postgres:17.9-bookworm
+    networks:
+      - default
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/warracker/postgres:/var/lib/postgresql/data
+
+  warracker:
+    container_name: ${APP_WARRACKER_NAME}
+    depends_on:
+      warracker-db:
+        condition: service_healthy
+    environment:
+      TZ: ${TZ}
+      FRONTEND_URL: ${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
+      APP_BASE_URL: ${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
+      SECRET_KEY: ${APP_WARRACKER_KEY}
+      MAX_UPLOAD_MB: 32
+      NGINX_MAX_BODY_SIZE_VALUE: 32M
+      WARRACKER_MEMORY_MODE: optimized
+      PYTHONUNBUFFERED: 1
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_USE_TLS: true
+      SMTP_USERNAME: ${APP_WARRACKER_SMTP_USERNAME}
+      SMTP_PASSWORD: ${APP_WARRACKER_SMTP_PASSWORD}
+      SMTP_SENDER_EMAIL: ${APP_WARRACKER_SMTP_USERNAME}
+      DB_HOST: warracker-db
+      DB_PORT: 5432
+      DB_NAME: ${APP_WARRACKER_DB_DATABASE}
+      DB_USER: ${APP_WARRACKER_DB_USERNAME}
+      DB_PASSWORD: ${APP_WARRACKER_DB_PASSWORD}
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 15s
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      timeout: 5s
+    image: ghcr.io/sassanix/warracker/main:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER}
+      homepage.group: ${APP_WARRACKER_NAME}
+      homepage.name: ${APP_WARRACKER_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_WARRACKER_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
+    networks:
+      - default
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - uploads:/data/uploads
+
+networks:
+  proxy-net:
+    external: true
+
+volumes:
+  uploads:

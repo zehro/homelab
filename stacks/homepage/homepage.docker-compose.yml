@@ -1,0 +1,24 @@
+services:
+  homepage:
+    container_name: ${APP_HOMEPAGE_NAME}
+    environment:
+      TZ: ${TZ}
+      HOMEPAGE_ALLOWED_HOSTS: ${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
+    healthcheck:
+      interval: 30s
+      retries: 3
+      test: ["CMD", "wget", "--quiet", "--spider", "http://localhost:3000/api/healthcheck"]
+      timeout: 10s
+    image: ghcr.io/gethomepage/homepage:latest
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    user: 0:999
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ${APP_PATH_DATA}/homepage/config:/app/config
+      - ${APP_PATH_DATA}/homepage/images:/app/public/images
+
+networks:
+  proxy-net:
+    external: true

@@ -1,0 +1,37 @@
+services:
+  crafty:
+    container_name: ${APP_CRAFTY_NAME}
+    environment:
+      TZ: ${TZ}
+    healthcheck:
+      interval: 30s
+      retries: 5
+      start_period: 30s
+      test: ["CMD", "timeout", "1", "bash", "-c", "cat < /dev/null > /dev/tcp/127.0.0.1/8443"]
+      timeout: 5s
+    image: arcadiatechnology/crafty-4:latest
+    ports:
+      - ${APP_CRAFTY_PORT:-8443}:8443
+      - ${APP_DYNMAP_PORT:-8123}:8123
+      - ${APP_BEDROCK_PORT:-19132}:19132/udp
+      # Minecraft Server Port Range (25500-25600)
+      - 25565:25565
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_CRAFTY_NAME}
+      homepage.name: ${APP_CRAFTY_LABEL_HOMEPAGE_NAME}
+      homepage.icon: ${APP_CRAFTY_LABEL_HOMEPAGE_ICON}
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/crafty/config:/crafty/app/config
+      - ${APP_PATH_DATA}/crafty/backups:/crafty/backups
+      - ${APP_PATH_DATA}/crafty/import:/crafty/import
+      - ${APP_PATH_DATA}/crafty/logs:/crafty/logs
+      - ${APP_PATH_DATA}/crafty/servers:/crafty/servers
+
+networks:
+  proxy-net:
+    external: true
