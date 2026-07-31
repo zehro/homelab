@@ -60,8 +60,8 @@ services:
       homepage.widget.type: romm
       homepage.widget.url: http://${APP_ROMM_NAME}:8080
     networks:
-      - proxy-net
       - default
+      - proxy-net
     restart: unless-stopped
     user: ${PUID}:${PGID}
     volumes:

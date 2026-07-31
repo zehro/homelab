@@ -1,0 +1,42 @@
+services:
+  coder-db:
+    container_name: ${APP_CODER_NAME}_db
+    environment:
+      POSTGRES_DB: ${APP_CODER_DB_DATABASE}
+      POSTGRES_USER: ${APP_CODER_DB_USERNAME}
+      POSTGRES_PASSWORD: ${APP_CODER_DB_PASSWORD}
+    healthcheck:
+      interval: 5s
+      retries: 5
+      test: ["CMD", "pg_isready", "-U", "${APP_CODER_DB_USERNAME}", "-d", "${APP_CODER_DB_DATABASE}"]
+      timeout: 5s
+    image: "postgres:17"
+    networks:
+      - default
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/coder/postgres:/var/lib/postgresql/data
+
+  coder:
+    container_name: ${APP_CODER_NAME}
+    depends_on:
+      coder-db:
+        condition: service_healthy
+    environment:
+      CODER_PG_CONNECTION_URL: postgresql://${APP_CODER_DB_USERNAME}:${APP_CODER_DB_PASSWORD}@database/${APP_CODER_DB_DATABASE}?sslmode=disable
+      CODER_HTTP_ADDRESS: http://${APP_CODER_NAME}:${APP_CODER_PORT}
+      CODER_ACCESS_URL: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
+    group_add:
+      - "999"
+    image: ghcr.io/coder/coder:latest
+    networks:
+      - default
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ${APP_PATH_DATA}/coder/data:/home/coder
+
+networks:
+  proxy-net:
+    external: true
