@@ -14,6 +14,7 @@ services:
     networks:
       - default
     restart: unless-stopped
+    user: 999:999
     volumes:
       - ${APP_PATH_DATA}/coder/postgres:/var/lib/postgresql/data
 
@@ -23,8 +24,8 @@ services:
       coder-db:
         condition: service_healthy
     environment:
-      CODER_PG_CONNECTION_URL: postgresql://${APP_CODER_DB_USERNAME}:${APP_CODER_DB_PASSWORD}@database/${APP_CODER_DB_DATABASE}?sslmode=disable
-      CODER_HTTP_ADDRESS: http://${APP_CODER_NAME}:${APP_CODER_PORT}
+      CODER_PG_CONNECTION_URL: postgresql://${APP_CODER_DB_USERNAME}:${APP_CODER_DB_PASSWORD}@${APP_CODER_NAME}_db/${APP_CODER_DB_DATABASE}?sslmode=disable
+      CODER_HTTP_ADDRESS: 0.0.0.0:${APP_CODER_PORT:-7080}
       CODER_ACCESS_URL: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
     group_add:
       - "999"
