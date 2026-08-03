@@ -29,6 +29,12 @@ services:
       CODER_ACCESS_URL: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
     group_add:
       - "999"
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 30s
+      test: ["CMD", "curl", "-f", "http://localhost:7080/healthz"]
+      timeout: 10s
     image: ghcr.io/coder/coder:latest
     networks:
       - default
