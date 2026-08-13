@@ -33,7 +33,7 @@ services:
       - ${APP_PATH_DATA}/stash/cache:/cache
       - ${APP_PATH_DATA}/stash/generated:/generated
       - ${APP_PATH_DATA}/stash/metadata:/metadata
-      - ${APP_PATH_LIBRARY}/NSFW:/data
+      - ${APP_PATH_LIBRARY}:/data
 
 networks:
   proxy-net:
