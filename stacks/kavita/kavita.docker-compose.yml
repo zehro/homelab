@@ -27,6 +27,7 @@ services:
     volumes:
       - ${APP_PATH_DATA}/kavita/config:/config
       - ${APP_PATH_LIBRARY}:/data
+      - ${APP_PATH_LIBRARY_NSFW}:/data/NSFW
 
 networks:
   proxy-net:
