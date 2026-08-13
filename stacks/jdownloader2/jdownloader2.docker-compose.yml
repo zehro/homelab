@@ -3,6 +3,8 @@ services:
     container_name: jdownloader
     environment:
       TZ: ${TZ}
+      USER_ID: ${PUID}
+      GROUP_ID: ${PGID}
       EXT_LISTENING_PORT: 3129
       WEB_LISTENING_PORT: ${APP_JDOWNLOADER_PORT:-5800}
       VNC_LISTENING_PORT: -1
