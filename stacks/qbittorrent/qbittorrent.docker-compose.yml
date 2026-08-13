@@ -79,6 +79,7 @@ services:
     volumes:
       - ${APP_PATH_DATA}/servarr/qbittorrent:/config
       - ${APP_PATH_LIBRARY}/downloads:/downloads
+      - ${APP_PATH_LIBRARY_NSFW}/downloads:/downloads/NSFW
 
   qbittorrent-port-sync:
     container_name: ${APP_QBT_SYNC}
@@ -133,34 +134,36 @@ services:
     volumes:
       - ${APP_PATH_DATA}/servarr/cleanuparr:/config
       - ${APP_PATH_LIBRARY}/downloads:/downloads
+      - ${APP_PATH_LIBRARY_NSFW}/downloads:/downloads/NSFW
 
-  unpackerr:
-    container_name: ${APP_UNPACKERR_NAME}
-    depends_on:
-      qbittorrent:
-        condition: service_healthy
-    environment:
-      TZ: ${TZ}
-    healthcheck:
-      interval: 30s
-      retries: 3
-      start_period: 60s
-      test: ["CMD-SHELL", "test -f /proc/1/status"]
-      timeout: 10s
-    image: golift/unpackerr
-    labels:
-      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
-      homepage.group: ${APP_UNPACKERR_NAME}
-      homepage.name: ${APP_UNPACKERR_LABEL_HOMEPAGE_NAME}
-      homepage.icon: ${APP_UNPACKERR_LABEL_HOMEPAGE_ICON}
-      homepage.href: ${APP_UNPACKERR_LABEL_HOMEPAGE_HREF}
-    networks:
-      - proxy-net
-    restart: unless-stopped
-    user: ${PUID}:100
-    volumes:
-      - ${APP_PATH_DATA}/servarr/unpackerr:/config
-      - ${APP_PATH_LIBRARY}/downloads:/downloads
+  # unpackerr:
+  #   container_name: ${APP_UNPACKERR_NAME}
+  #   depends_on:
+  #     qbittorrent:
+  #       condition: service_healthy
+  #   environment:
+  #     TZ: ${TZ}
+  #   healthcheck:
+  #     interval: 30s
+  #     retries: 3
+  #     start_period: 60s
+  #     test: ["CMD-SHELL", "test -f /proc/1/status"]
+  #     timeout: 10s
+  #   image: golift/unpackerr
+  #   labels:
+  #     homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+  #     homepage.group: ${APP_UNPACKERR_NAME}
+  #     homepage.name: ${APP_UNPACKERR_LABEL_HOMEPAGE_NAME}
+  #     homepage.icon: ${APP_UNPACKERR_LABEL_HOMEPAGE_ICON}
+  #     homepage.href: ${APP_UNPACKERR_LABEL_HOMEPAGE_HREF}
+  #   networks:
+  #     - proxy-net
+  #   restart: unless-stopped
+  #   user: ${PUID}:100
+  #   volumes:
+  #     - ${APP_PATH_DATA}/servarr/unpackerr:/config
+  #     - ${APP_PATH_LIBRARY}/downloads:/downloads
+  #     - ${APP_PATH_LIBRARY_NSFW}/downloads:/downloads/NSFW
 
 networks:
   proxy-net:
