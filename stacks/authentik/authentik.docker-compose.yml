@@ -9,9 +9,12 @@ services:
     healthcheck:
       interval: 30s
       retries: 5
-      start_period: 20s
-      test: ['CMD', 'pg_isready', '-U', '${APP_AUTHENTIK_DB_USERNAME}', '-d', '${APP_AUTHENTIK_DB_DATABASE}']
-      timeout: 5s
+      start_period: 5s
+      test: [
+        "CMD-SHELL",
+        "pg_isready -U ${APP_AUTHENTIK_DB_USERNAME} -d ${APP_AUTHENTIK_DB_DATABASE}"
+      ]
+      timeout: 10s
     image: postgres:18
     networks:
       - default
@@ -39,10 +42,13 @@ services:
     healthcheck:
       interval: 30s
       retries: 5
-      start_period: 30s
-      test: ["CMD", "/lifecycle/ak", "healthcheck"]
-      timeout: 5s
-    image: ${APP_AUTHENTIK_IMAGE}
+      start_period: 15s
+      test: [
+        "CMD-SHELL",
+        "/lifecycle/ak healthcheck"
+      ]
+      timeout: 10s
+    image: ghcr.io/goauthentik/server:${APP_AUTHENTIK_VERSION}
     labels:
       homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
       homepage.group: ${APP_AUTHENTIK_NAME}
@@ -81,11 +87,14 @@ services:
       AUTHENTIK_SECRET_KEY: ${APP_AUTHENTIK_KEY}
     healthcheck:
       interval: 30s
-      retries: 3
-      start_period: 30s
-      test: ["CMD", "/lifecycle/ak", "healthcheck"]
+      retries: 5
+      start_period: 15s
+      test: [
+        "CMD-SHELL",
+        "/lifecycle/ak healthcheck"
+      ]
       timeout: 10s
-    image: ${APP_AUTHENTIK_IMAGE}
+    image: ghcr.io/goauthentik/server:${APP_AUTHENTIK_VERSION}
     networks:
       - default
       - proxy-net
