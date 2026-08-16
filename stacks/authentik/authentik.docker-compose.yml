@@ -68,6 +68,8 @@ services:
     restart: unless-stopped
     shm_size: 512mb
     volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - /run/systemd/timesync:/run/systemd/timesync:ro
       - ${APP_PATH_DATA}/authentik/data:/data
       - ${APP_PATH_DATA}/authentik/templates:/templates
 
@@ -102,6 +104,7 @@ services:
     shm_size: 512mb
     user: root
     volumes:
+    - /etc/localtime:/etc/localtime:ro
     - /var/run/docker.sock:/var/run/docker.sock
     - ${APP_PATH_DATA}/authentik/data:/data
     - ${APP_PATH_DATA}/authentik/certs:/certs
