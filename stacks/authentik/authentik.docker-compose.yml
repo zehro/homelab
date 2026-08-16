@@ -42,8 +42,6 @@ services:
       AUTHENTIK_EMAIL__HOST: smtp.gmail.com
       AUTHENTIK_EMAIL__PORT: 587
       AUTHENTIK_EMAIL__USE_TLS: true
-      AUTHENTIK_EMAIL__USE_SSL: false
-      AUTHENTIK_EMAIL__TIMEOUT: 30
       AUTHENTIK_EMAIL__USERNAME: ${APP_AUTHENTIK_SMTP_USERNAME}
       AUTHENTIK_EMAIL__PASSWORD: ${APP_AUTHENTIK_SMTP_PASSWORD}
       AUTHENTIK_EMAIL__FROM: ${APP_AUTHENTIK_SMTP_USERNAME}
@@ -76,8 +74,6 @@ services:
     restart: unless-stopped
     shm_size: 512mb
     volumes:
-      - /etc/localtime:/etc/localtime:ro
-      - /run/systemd/timesync:/run/systemd/timesync:ro
       - ${APP_PATH_DATA}/authentik/data:/data
       - ${APP_PATH_DATA}/authentik/templates:/templates
 
@@ -112,7 +108,6 @@ services:
     shm_size: 512mb
     user: root
     volumes:
-    - /etc/localtime:/etc/localtime:ro
     - /var/run/docker.sock:/var/run/docker.sock
     - ${APP_PATH_DATA}/authentik/data:/data
     - ${APP_PATH_DATA}/authentik/certs:/certs
