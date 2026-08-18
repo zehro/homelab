@@ -37,8 +37,6 @@ services:
       CODER_OIDC_CLIENT_SECRET: ${APP_CODER_OIDC_CLIENT_SECRET}
       CODER_OIDC_ALLOW_SIGNUPS: true
       CODER_OAUTH2_GITHUB_DEFAULT_PROVIDER_ENABLE: false
-    extra_hosts:
-      - "auth.zehrowon.dev:172.16.29.30"
     group_add:
       - "999"
     healthcheck:
