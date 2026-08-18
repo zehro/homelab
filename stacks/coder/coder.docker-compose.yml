@@ -38,8 +38,6 @@ services:
       CODER_OIDC_CLIENT_SECRET: ${APP_CODER_OIDC_CLIENT_SECRET}
       CODER_OIDC_SCOPES: openid,profile,email,offline_access
       CODER_OIDC_ALLOW_SIGNUPS: true
-    extra_hosts:
-      - "auth.${APP_URL_DOMAIN}:172.16.29.30"
     group_add:
       - "999"
     healthcheck:
