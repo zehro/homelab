@@ -31,14 +31,15 @@ services:
       CODER_HTTP_ADDRESS: 0.0.0.0:${APP_CODER_PORT:-7080}
       CODER_ACCESS_URL: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
       CODER_SESSION_SECRET: ${APP_CODER_SESSION_SECRET}
-      CODER_OIDC_ISSUER_URL: https://auth.zehrowon.dev/application/o/coder/
+      CODER_OAUTH2_GITHUB_DEFAULT_PROVIDER_ENABLE: false
+      CODER_OIDC_ISSUER_URL: https://auth.${APP_URL_DOMAIN}/application/o/coder/
       CODER_OIDC_EMAIL_DOMAIN: ${APP_CODER_EMAIL_WHITELIST}
       CODER_OIDC_CLIENT_ID: ${APP_CODER_OIDC_CLIENT_ID}
       CODER_OIDC_CLIENT_SECRET: ${APP_CODER_OIDC_CLIENT_SECRET}
+      CODER_OIDC_SCOPES: openid,profile,email,offline_access
       CODER_OIDC_ALLOW_SIGNUPS: true
-      CODER_OAUTH2_GITHUB_DEFAULT_PROVIDER_ENABLE: false
     extra_hosts:
-      - "auth.zehrowon.dev:172.16.29.30"
+      - "auth.${APP_URL_DOMAIN}:172.16.29.30"
     group_add:
       - "999"
     healthcheck:
