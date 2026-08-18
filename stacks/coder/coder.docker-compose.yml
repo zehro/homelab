@@ -59,6 +59,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - /etc/ssl/certs:/etc/ssl/certs:ro
       - ${APP_PATH_DATA}/coder/data:/home/coder
+      - ${APP_PATH_REPO}/repos:/repos
 
 networks:
   proxy-net:
