@@ -79,7 +79,6 @@ services:
     volumes:
       - ${APP_PATH_DATA}/servarr/qbittorrent:/config
       - ${APP_PATH_LIBRARY}/downloads:/downloads
-      - ${APP_PATH_LIBRARY_NSFW}/downloads:/downloads/NSFW
 
   qbittorrent-port-sync:
     container_name: ${APP_QBT_SYNC}
@@ -134,7 +133,6 @@ services:
     volumes:
       - ${APP_PATH_DATA}/servarr/cleanuparr:/config
       - ${APP_PATH_LIBRARY}/downloads:/downloads
-      - ${APP_PATH_LIBRARY_NSFW}/downloads:/downloads/NSFW
 
   # unpackerr:
   #   container_name: ${APP_UNPACKERR_NAME}
