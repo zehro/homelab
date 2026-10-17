@@ -38,7 +38,6 @@ services:
     volumes:
       - ${APP_PATH_DATA}/jdownloader:/config
       - ${APP_PATH_LIBRARY}/downloads/jdownloader:/output
-      - ${APP_PATH_LIBRARY_NSFW}/downloads/jdownloader:/output/NSFW
 
 networks:
   proxy-net:

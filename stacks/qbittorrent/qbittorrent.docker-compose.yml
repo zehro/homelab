@@ -161,7 +161,6 @@ services:
   #   volumes:
   #     - ${APP_PATH_DATA}/servarr/unpackerr:/config
   #     - ${APP_PATH_LIBRARY}/downloads:/downloads
-  #     - ${APP_PATH_LIBRARY_NSFW}/downloads:/downloads/NSFW
 
 networks:
   proxy-net:
