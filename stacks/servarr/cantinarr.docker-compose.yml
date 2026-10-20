@@ -1,0 +1,28 @@
+services:
+  cantinarr:
+    container_name: ${APP_CANTINARR_NAME}
+    environment:
+      TZ: ${TZ}
+      CANTINARR_PUSH_GATEWAY_URL: https://push.cantinarr.com
+    healthcheck:
+      interval: 30s
+      retries: 3
+      start_period: 30s
+      test: ["CMD", "curl", "-f", "http://localhost:8585/health"]
+      timeout: 10s
+    image: ghcr.io/windoze95/cantinarr:latest
+    labels:
+      homepage.server: ${APP_LABEL_HOMEPAGE_SERVER:-docker-server}
+      homepage.group: ${APP_CANTINARR_NAME}
+      homepage.name: Cantinarr
+      homepage.icon: cantinarr
+      homepage.href: https://${APP_URL_SUBDOMAIN}${APP_URL_DOMAIN}
+    networks:
+      - proxy-net
+    restart: unless-stopped
+    volumes:
+      - ${APP_PATH_DATA}/servarr/cantinarr:/config
+
+networks:
+  proxy-net:
+    external: true
